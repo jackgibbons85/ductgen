@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  geometry:
+    # The SolidWorks backend needs Windows and a licence, so CI exercises the
+    # part that decides everything upstream of it: the section, the design
+    # rules and the bed-fit splitter.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy matplotlib
+      - name: geometry invariants
+        run: python tests/test_geometry.py
+      - name: render every preset
+        run: |
+          for p in presets/*.json; do
+            [ "$(basename "$p")" = "printers.json" ] && continue
+            python -m ductgen preview -p "$p" -o out
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: previews
+          path: out/*.png

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# generated output
+out/
+*.SLDPRT
+*.SLDASM
+*.STEP
+*.STL
+~$*
+
+# solidworks / windows debris
+*.bak
+Thumbs.db

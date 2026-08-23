@@ -1,0 +1,11 @@
+{
+  "Bambu A1":        {"bed_x": 256, "bed_y": 256, "bed_z": 256, "nozzle": 0.4},
+  "Bambu A1 mini":   {"bed_x": 180, "bed_y": 180, "bed_z": 180, "nozzle": 0.4},
+  "Bambu X1C / P1S": {"bed_x": 256, "bed_y": 256, "bed_z": 256, "nozzle": 0.4},
+  "Prusa MK4":       {"bed_x": 250, "bed_y": 210, "bed_z": 220, "nozzle": 0.4},
+  "Prusa XL":        {"bed_x": 360, "bed_y": 360, "bed_z": 360, "nozzle": 0.4},
+  "Creality Ender 3":{"bed_x": 220, "bed_y": 220, "bed_z": 250, "nozzle": 0.4},
+  "Creality K1 Max": {"bed_x": 300, "bed_y": 300, "bed_z": 300, "nozzle": 0.4},
+  "Voron 2.4 350":   {"bed_x": 350, "bed_y": 350, "bed_z": 350, "nozzle": 0.4},
+  "Elegoo Neptune 4":{"bed_x": 225, "bed_y": 225, "bed_z": 265, "nozzle": 0.4}
+}
