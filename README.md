@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="icon.png" alt="ductgen" width="760">
+<img src="icon.png" alt="ductgen" width="420">
 
 **A parametric generator for 3D printed ducted quad frames**
 
@@ -14,7 +14,7 @@
 
 Give it a prop size, a motor and your printer's bed. It derives the duct section from the aerodynamics, splits the ring into the fewest pieces that still fit the plate, and builds the parts as SLDPRT, STEP and STL.
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Contributing](#-contributing) • [Documentation](#-documentation)
+[Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [Documentation](#documentation)
 
 **[English](README.md)** | **[Українська](README.uk.md)**
 
@@ -27,11 +27,11 @@ Give it a prop size, a motor and your printer's bed. It derives the duct section
 >
 > I built this from measurements of my own 13" ducted quad, so every default in the code is a number taken off that airframe. The design side (`preview`, `section`, `layers`, `report`) needs nothing but numpy and matplotlib and runs anywhere. The SolidWorks backend is tested on SolidWorks 2025, rev 33.4.1, on Windows only. The build123d backend runs anywhere Python does.
 >
-> Assembly components are placed by transform but not mated, and the duct is still solid in CAD rather than lightened. See the [Roadmap](#-roadmap).
+> Assembly components are placed by transform but not mated, and the duct is still solid in CAD rather than lightened. See the [Roadmap](#roadmap).
 
 ---
 
-## 📋 Quick Start
+## Quick Start
 
 ```bash
 git clone https://github.com/jackgibbons85/ductgen
@@ -42,9 +42,9 @@ python -m ductgen preview -p presets/13in_a1.json
 
 That writes a preview PNG and a full report without touching CAD. Then either double-click `ductgen-gui.pyw` for the desktop window, or run `python -m ductgen build -p presets/13in_a1.json -o out/13in` to build the solids.
 
-## ✨ Features
+## Features
 
-### 🎯 Inputs That Drive Geometry Through the Physics
+### Inputs That Drive Geometry Through the Physics
 
 Change an input and the tool works out what it means, then tells you when the numbers do not add up.
 
@@ -59,7 +59,7 @@ Every rule is reported as OK, WARN or FAIL against what it wants.
 ![four-panel preview](docs/preview-derived.png)
 *`preview` output: duct section, plan view, plate fit and the rule table, all in one PNG*
 
-### 🧩 Splitting for the Print Bed
+### Splitting for the Print Bed
 
 This is the part that otherwise gets done by hand.
 
@@ -71,7 +71,7 @@ This is the part that otherwise gets done by hand.
 ![four copies of one generated part, rotated, closing the ring](docs/ring_closure.png)
 *`analysis/verify_ring.py` re-imports the generated STL, rotates N copies and confirms the ring closes with zero angular gap at four heights*
 
-### 🔧 Two CAD Backends
+### Two CAD Backends
 
 The same `Frame`, `RingPlan` and `segment_features()` feed both, so every design decision is shared and only the solid modelling differs. On the 13" preset they agree on part volumes to about 0.01%, which is the difference between the SolidWorks spline fit and the OCCT one through the same bellmouth points.
 
@@ -85,13 +85,13 @@ The same `Frame`, `RingPlan` and `segment_features()` feed both, so every design
 
 Use SolidWorks when you want a feature tree you can keep editing by hand. Use build123d when you want the geometry on a machine with no CAD seat, in CI, or on Linux.
 
-### 🖥️ Desktop Window and SolidWorks Button
+### Desktop Window and SolidWorks Button
 
 - **Live rules.** Change the prop, the kV or the bed and the segment count, plate size and every OK/WARN/FAIL update as you type.
 - **Toolbar button.** The same window can go on a SolidWorks toolbar, so parts are created in the session you already have open. Setup takes about thirty seconds, see [macro/README.md](macro/README.md).
 - **Presets in and out.** Load and save parameter JSON, or override anything on the command line with a dotted key.
 
-### ✅ Checks That Run on Every Preset
+### Checks That Run on Every Preset
 
 - **Ring closure.** The ring has to close through 360 degrees at every height.
 - **Rod paths.** Every carbon rod has to have a clear path through the printed parts. This is what catches a bore drilled into the wrong side of a lap joint, or a connector with no bore for a rod that runs straight through it.
@@ -101,13 +101,13 @@ Use SolidWorks when you want a feature tree you can keep editing by hand. Use bu
 ![generated mount against the measured STL](docs/mount_fixed.png)
 *Assembly slices at four heights, and the generated motor mount (orange) against the STL measured off the real drone (green), 13.44 cm³ against 13.55 cm³*
 
-### 🖨️ Print Orientation
+### Print Orientation
 
 - **Inlet face up, every time.** The bellmouth then recedes layer over layer and needs no support. Inverted it is a full overhang right at the lip, which is the one surface whose shape matters most.
 - **One overhang worth naming.** In the good orientation the only overhanging bore surface is the diffuser, at 3 degrees from vertical.
 - **Minimal supports.** The half-lap tab at one end of each segment is a shelf with air under it. Support that face only, two small patches per part.
 
-### 🔩 How the Frame Goes Together
+### How the Frame Goes Together
 
 - **Studs, not bolts.** Joints are located by a blind stud pocket in each half of the lap. The carbon wrap is the structure and the pin only stops the two halves sliding while the wrap goes on. Set `joint.stud = 0` to put through-bolts back.
 - **Orderable rod sizes.** Rod sizes, bolt patterns and the centre plate all derive from the prop unless you pin them, and derived rods snap onto tube sizes you can actually buy. 13" gives 10 mm arms and a 20 mm spine, 5" gives 6 and 12. Nothing in the output is 5.3249 mm.
@@ -115,7 +115,7 @@ Use SolidWorks when you want a feature tree you can keep editing by hand. Use bu
 
 ---
 
-## 💻 Requirements
+## Requirements
 
 | Part | Needs | Notes |
 | --- | --- | --- |
@@ -125,7 +125,7 @@ Use SolidWorks when you want a feature tree you can keep editing by hand. Use bu
 
 ---
 
-## 📥 Installation
+## Installation
 
 ```bash
 git clone https://github.com/jackgibbons85/ductgen
@@ -141,7 +141,7 @@ pip install build123d
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### Command Line
 
@@ -203,7 +203,7 @@ No CAD needed. It checks the invariants that matter: the meridian never self-int
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome, whether that is a bug report, a feature idea, a fix or a new preset.
 
@@ -216,16 +216,16 @@ Contributions are welcome, whether that is a bug report, a feature idea, a fix o
 
 ### Areas Needing Help
 
-- 🐧 **Linux and macOS testing** of the build123d backend, which is the only one that can run there
-- 🧊 **Older SolidWorks versions.** The COM calls are pinned to what 2025 expects, and `FeatureCut4` in particular changed argument count between releases
-- 🖨️ **Printer profiles.** More entries for `presets/printers.json`
-- ✈️ **Airframe presets** with measurements behind them, the way `reference_drone3` has
-- 🔗 **Joint kinds.** `dovetail` and `butt_pin` are declared but not built
-- 🌍 **Translations.** This README is in English and Ukrainian so far
+- **Linux and macOS testing** of the build123d backend, which is the only one that can run there
+- **Older SolidWorks versions.** The COM calls are pinned to what 2025 expects, and `FeatureCut4` in particular changed argument count between releases
+- **Printer profiles.** More entries for `presets/printers.json`
+- **Airframe presets** with measurements behind them, the way `reference_drone3` has
+- **Joint kinds.** `dovetail` and `butt_pin` are declared but not built
+- **Translations.** This README is in English and Ukrainian so far
 
 ---
 
-## 📖 Documentation
+## Documentation
 
 - **[REFERENCE.md](REFERENCE.md)** - The measured drone every default traces back to
 - **[macro/README.md](macro/README.md)** - Putting ductgen on a SolidWorks toolbar button
@@ -244,7 +244,7 @@ A few things cost me time, recorded so they do not cost it twice.
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Core
 
@@ -290,7 +290,7 @@ tests/           geometry invariants, no CAD needed
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Bed-fit splitter with joint phasing
 - [x] build123d backend, so the tool runs without a CAD licence
@@ -304,13 +304,13 @@ tests/           geometry invariants, no CAD needed
 
 ---
 
-## 📄 License
+## License
 
 MIT. See [LICENSE](LICENSE) for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [build123d](https://github.com/gumyr/build123d) by gumyr, which made the no-licence backend possible
 - The SolidWorks API documentation and the forum posts that filled its gaps
@@ -318,6 +318,6 @@ MIT. See [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-**If ductgen is useful to you, a ⭐️ on GitHub is appreciated.**
+**If ductgen is useful to you, a star on GitHub is appreciated.**
 
 </div>
