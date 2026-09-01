@@ -1,11 +1,3 @@
-"""Command line front end.
-
-    python -m ductgen preview  -p presets/13in_a1.json
-    python -m ductgen report   -p presets/reference_drone2.json
-    python -m ductgen build    -p presets/13in_a1.json -o out/13in
-    python -m ductgen set      -p presets/13in_a1.json prop.diameter_in=5 \\
-                                  printer.bed_x=180 printer.bed_y=180
-"""
 from __future__ import annotations
 import argparse
 import json
@@ -89,9 +81,17 @@ def report(f: Frame) -> str:
           f"{'yes' if p.fits else 'NO':<4} {p.note}")
     w("")
     w("HARDWARE")
-    nb = ring.count * f.joint.bolts * 4
-    w(f"  M{f.joint.bolt_size:.0f} joint bolts       {nb:4d}   "
-      f"({f.joint.bolts} per joint, {ring.count} joints per ring, 4 rings)")
+    nj = len(ring.joint_angles)
+    nb = nj * f.joint.bolts * 4
+    if f.joint.stud > 0:
+        w(f"  {f.joint.stud:.1f} mm joint studs   {nb:4d}   "
+          f"({f.joint.bolts} per joint, {nj} joints per ring, 4 rings). "
+          f"Blind {f.stud_depth:.1f} mm each side, cut your own from rod. "
+          "No screws: the carbon wrap is the joint.")
+    else:
+        w(f"  M{f.joint.bolt_size:.0f} joint bolts       {nb:4d}   "
+          f"({f.joint.bolts} per joint, {nj} joints per ring incl. the two "
+          "connector ends, 4 rings)")
     w(f"  M{f.motor.bolt_size:.0f} motor bolts       "
       f"{4*f.motor.bolt_count:4d}")
     w("")
@@ -104,13 +104,19 @@ def report(f: Frame) -> str:
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="ductgen",
                                  description="Parametric ducted quad frame generator")
-    ap.add_argument("command", choices=["preview", "report", "build", "set", "dump"])
+    ap.add_argument("command", choices=["preview", "section", "layers",
+                                        "report", "build", "set", "dump"])
     ap.add_argument("-p", "--params", help="parameter JSON file")
     ap.add_argument("-o", "--out", default="out", help="output directory")
     ap.add_argument("--hidden", action="store_true",
                     help="run SolidWorks without showing the window")
     ap.add_argument("--keep-open", action="store_true",
                     help="leave the generated parts open in SolidWorks")
+    ap.add_argument("--opaque", action="store_true",
+                    help="layers: dark ground instead of transparent")
+    ap.add_argument("--backend", choices=["sw", "b3d"], default="sw",
+                    help="build: sw drives SolidWorks over COM, b3d uses "
+                         "build123d and needs no CAD seat")
     ap.add_argument("overrides", nargs="*",
                     help="dotted overrides, e.g. prop.diameter_in=5")
     a = ap.parse_args(argv)
@@ -139,22 +145,53 @@ def main(argv=None):
 
     if a.command == "preview":
         from .preview import render
-        p = render(f, os.path.join(a.out, f"{f.name}_preview.png"))
+        sec = os.path.join(a.out, f"{f.name}_section.png")
+        p = render(f, os.path.join(a.out, f"{f.name}_preview.png"),
+                   section_path=sec)
         print(report(f))
         print(f"\n[saved {p}]")
+        print(f"[saved {sec}]")
+        return 0
+
+    if a.command == "section":
+        from .preview import render_section
+        p = render_section(f, os.path.join(a.out, f"{f.name}_section.png"))
+        print(f"[saved {p}]")
+        return 0
+
+    if a.command == "layers":
+        from .preview import render_layers
+        d = os.path.join(a.out, f"{f.name}_layers")
+        for p in render_layers(f, d, transparent=not a.opaque):
+            print(f"[saved {p}]")
+        print("\nstack them bottom-up in the editor: 1_ducts, 2_connectors, "
+              "3_rods.\n1+2 is the frame without rods; all three is the whole "
+              "aircraft.\nEvery plate is 1920x1080 on the same extent, so they "
+              "overlay exactly.")
         return 0
 
     if a.command == "build":
-        from .build_sw import build_all, placement_table
+        from .layout3d import placement_table
         ring = plan_ring(f)
         if not ring.fits:
             print("WARNING: no segment count fits this bed; building anyway "
                   "at the smallest overflow.", file=sys.stderr)
-        made = build_all(f, a.out, visible=not a.hidden, ring=ring,
-                         keep_open=a.keep_open)
+        if a.backend == "b3d":
+            from .build_b3d import build_all
+            made = build_all(f, a.out, ring=ring)
+        else:
+            from .build_sw import build_all
+            made = build_all(f, a.out, visible=not a.hidden, ring=ring,
+                             keep_open=a.keep_open)
         for r in made:
-            print(f"{r['part']:<14} qty {r['qty']:<3} "
-                  f"{r['volume_cm3']:8.1f} cm3")
+            line = f"{r['part']:<14} qty {r['qty']:<3}"
+            if "volume_cm3" in r:
+                line += f" {r['volume_cm3']:8.1f} cm3"
+            if "components" in r:
+                line += f" {r['components']} components placed"
+                if r.get("missing"):
+                    line += f"  MISSING: {', '.join(r['missing'])}"
+            print(line)
             for p in r["files"]:
                 print(f"   {p}")
         tbl = os.path.join(a.out, f"{f.name}_placement.json")

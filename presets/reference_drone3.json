@@ -1,5 +1,5 @@
 {
-  "name": "drone3_v2",
+  "name": "drone3_asbuilt",
   "prop": {
     "diameter_in": 13.0,
     "pitch_in": 4.4,
@@ -20,17 +20,17 @@
     "boss_dia": 10.0
   },
   "duct": {
-    "tip_clearance_pct": 1.5,
-    "wall": 6.0,
+    "tip_clearance_pct": 1.48,
+    "wall": 20.0,
     "rim_land": 3.0,
-    "chord_ratio": 0.3,
-    "lip_radius_ratio": 0.06,
-    "lip_ellipse_ratio": 1.8,
-    "diffuser_deg": 3.0,
-    "prop_plane_frac": 0.28,
-    "trailing_edge_r": 1.5,
+    "chord_ratio": 0.12113870381586918,
+    "lip_radius_ratio": 0.006965475469412477,
+    "lip_ellipse_ratio": 1.0,
+    "diffuser_deg": 0.0,
+    "prop_plane_frac": 0.1,
+    "trailing_edge_r": 2.3,
     "outer_style": "straight",
-    "od_override": 0.0
+    "od_override": 380.0
   },
   "struts": {
     "count": 4,
@@ -61,7 +61,7 @@
     "bolts": 2,
     "bolt_size": 3.0,
     "bolt_clearance": 0.5,
-    "bolt_edge_margin": 4.2,
+    "bolt_edge_margin": 4.4,
     "bolt_head_counterbore": false
   },
   "printer": {
@@ -75,7 +75,7 @@
     "layer": 0.2
   },
   "layout": {
-    "duct_gap": 0.0,
+    "duct_gap": 95.45,
     "duct_gap_ratio": 0.251,
     "config": "quad_x",
     "rod_size": 10.0,
@@ -83,20 +83,20 @@
   },
   "connector": {
     "enabled": true,
-    "outer_offset_ratio": 0.025,
-    "inner_offset_ratio": 0.31,
-    "pad_width_ratio": 0.358,
+    "outer_offset_ratio": 0.024736842105263158,
+    "inner_offset_ratio": 0.3105263157894737,
+    "pad_width_ratio": 0.35789473684210527,
     "inner_fillet_ratio": 0.13,
     "pad_rod_wall": 6.0,
     "blend_overlap": 1.5,
-    "fc_span": 30.0,
+    "fc_span": 30.5,
     "fc_bolt": 3.0
   },
   "center": {
     "plate_x": 140.0,
     "plate_z": 120.0,
-    "plate_y": 0.0,
-    "fc_span": 30.0,
+    "plate_y": 40.0,
+    "fc_span": 30.5,
     "fc_bolt": 3.0,
     "fc_clearance": 0.3,
     "stack_span": 65.0,

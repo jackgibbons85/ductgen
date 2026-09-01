@@ -31,7 +31,6 @@ def run(path, rmax=200.0):
         if g.sum()<6: continue
         pts=t[g].reshape(-1,3)
         P=pts[:,[0,2]]
-        # normals spread => curved?
         ang=np.degrees(np.arctan2(nn[g][:,2],nn[g][:,0]))%360
         a=np.sort(ang); spread=max(a[-1]-a[0], 360-(a[-1]-a[0]) if len(a)>1 else 0)
         cx,cy,rr,err=circle_fit(P)

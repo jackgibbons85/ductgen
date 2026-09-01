@@ -2,7 +2,6 @@ import numpy as np, sys, glob, os
 sys.path.insert(0,r"C:/Users/redre/sldtool/analysis")
 from stlread import read_stl
 
-# Y is up in these exports. Slice at height y, intersect triangles with plane -> segments
 def slice_y(tris, y):
     segs=[]
     p=tris

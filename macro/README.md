@@ -1,6 +1,6 @@
 # Putting ductgen on a SolidWorks toolbar
 
-`DuctGen.bas` is source, not a runnable macro — SolidWorks macros are `.swp`
+`DuctGen.bas` is source, not a runnable macro, SolidWorks macros are `.swp`
 files, which are binary VBA projects and cannot be committed to git in any
 useful form. Building one takes about thirty seconds, once.
 
@@ -9,7 +9,7 @@ useful form. Building one takes about thirty seconds, once.
 1. Run `install.bat` in the repository root first, so Python and the
    dependencies are there.
 2. In SolidWorks: **Tools → Macro → New…**, and save it as `DuctGen.swp`
-   **inside this `macro\` folder**. The location matters — the macro locates
+   **inside this `macro\` folder**. The location matters, the macro locates
    the rest of the repository relative to itself.
 3. The VBA editor opens with an empty `main`. Use **File → Import File…** and
    pick `DuctGen.bas` from this folder.
@@ -31,9 +31,9 @@ session you are already in.
 
 The macro reports what it tried. The usual causes:
 
-* **"Could not find ductgen-gui.pyw"** — the `.swp` is not in the repository's
+* **"Could not find ductgen-gui.pyw"**, the `.swp` is not in the repository's
   `macro\` folder. Move it there.
-* **"Could not start Python"** — Python is not on PATH. Either re-install it
+* **"Could not start Python"**, Python is not on PATH. Either re-install it
   with *Add python.exe to PATH* ticked, or create a virtualenv at the
   repository root (`python -m venv .venv` then
   `.venv\Scripts\pip install -r requirements.txt`); the macro checks

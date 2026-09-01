@@ -14,7 +14,6 @@ for p in sorted(glob.glob(sys.argv[1])):
     i,near,cx,cz=best
     r=np.hypot(v[:,0]-cx,v[:,2]-cz)
     th=np.degrees(np.arctan2(v[:,2]-cz,v[:,0]-cx))%360
-    # angular span handling wraparound
     s=np.sort(np.unique(np.round(th,1)))
     gaps=np.diff(np.r_[s, s[0]+360])
     k=int(np.argmax(gaps))

@@ -1,17 +1,3 @@
-"""Thin, defensive wrapper over the SolidWorks COM API.
-
-Two things this file exists to hide:
-
-1.  Units.  The API is metres and radians; this project is millimetres and
-    degrees.  Conversion happens here and nowhere else.
-2.  Binding.  Late-bound COM turns SolidWorks methods into properties
-    (``doc.GetTitle`` silently returns a string instead of being callable), so
-    everything here goes through the makepy-generated wrappers.  The typelib
-    is registered on demand the first time the tool runs.
-
-Plane selection walks the feature tree for RefPlane features rather than
-hard-coding "Front Plane", so a non-English install still works.
-"""
 from __future__ import annotations
 import glob
 import math
@@ -21,25 +7,23 @@ import pythoncom
 import win32com.client as win32
 from win32com.client import VARIANT, gencache, makepy
 
-M = 0.001                       # mm -> m
+M = 0.001
 
 SW_TYPELIB = "{83A33D31-27C5-11CE-BFD4-00400513BB57}"
 
-# swConst values used here
 swDocPART = 1
-swDefaultTemplatePart = 8       # swUserPreferenceStringValue_e
+swDefaultTemplatePart = 8
 swDefaultTemplateAssembly = 9
 swEndCondBlind = 0
 swEndCondThroughAll = 1
 swRefPlaneConstraint_Distance = 8
 
-# swUserPreferenceToggle_e / IntegerValue_e for the STL exporter
 swSTLBinaryFormat = 69
 swSTLShowInfoOnSave = 70
 swSTLDontTranslateToPositive = 71
-swSTLQuality = 78                # integer pref
+swSTLQuality = 78
 swSTLQuality_Fine = 2
-swExportStlUnits = 211           # 0 = mm
+swExportStlUnits = 211
 swUnitsLinear = 47
 
 _MOD = None
@@ -56,7 +40,6 @@ def _tlb_paths():
 
 
 def module():
-    """The generated early-binding module for the SolidWorks typelib."""
     global _MOD
     if _MOD is not None:
         return _MOD
@@ -83,18 +66,12 @@ def module():
 
 
 def _w(cls, obj):
-    """Wrap a COM object in a generated interface class.
-
-    win32com hands back late-bound CDispatch objects; the generated classes
-    need the underlying PyIDispatch, so unwrap one level when present.
-    """
     if obj is None:
         return None
     return cls(getattr(obj, "_oleobj_", obj))
 
 
 def _darr(values):
-    """A VARIANT array of doubles, which is what the sketch API wants."""
     return VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, [float(v) for v in values])
 
 
@@ -109,8 +86,6 @@ class SolidWorks:
                 raw = None
         if raw is None:
             raw = win32.Dispatch("SldWorks.Application")
-        # Visible / UserControl are put-properties the generated wrapper does
-        # not expose, so set them on the raw dispatch before wrapping.
         try:
             raw.Visible = visible
             raw.UserControl = True
@@ -121,13 +96,6 @@ class SolidWorks:
         self.configure_export()
 
     def configure_export(self):
-        """STL defaults that matter for a generator.
-
-        Without DontTranslateToPositive the exporter shifts every part into
-        the positive octant, which throws away the placement the assembly
-        needs; without ShowInfoOnSave=False a modal dialog blocks the save
-        and the whole run hangs.
-        """
         for pref, val in ((swSTLBinaryFormat, True),
                           (swSTLShowInfoOnSave, False),
                           (swSTLDontTranslateToPositive, True)):
@@ -146,7 +114,6 @@ class SolidWorks:
     def version(self):
         return self.app.RevisionNumber()
 
-    # ---------------- documents ----------------
     def new_part(self):
         tmpl = self.app.GetUserPreferenceStringValue(swDefaultTemplatePart)
         if not tmpl or not os.path.exists(tmpl):
@@ -167,9 +134,13 @@ class SolidWorks:
     def close(self, model):
         self.app.CloseDoc(model.GetTitle())
 
-    # ---------------- selection ----------------
+    def close_all(self):
+        try:
+            self.app.CloseAllDocuments(True)
+        except Exception:
+            pass
+
     def base_planes(self, model):
-        """[front, top, right] in tree order, whatever they are called."""
         names = []
         feat = model.FirstFeature()
         while feat is not None and len(names) < 3:
@@ -194,7 +165,6 @@ class SolidWorks:
     def clear(model):
         model.ClearSelection2(True)
 
-    # ---------------- sketching ----------------
     def begin_sketch(self, model, plane_name):
         self.clear(model)
         self.select(model, plane_name, "PLANE")
@@ -209,12 +179,10 @@ class SolidWorks:
         model.SetDisplayWhenAdded(True)
         sm = _w(self.mod.ISketchManager, model.SketchManager)
         sm.InsertSketch(True)
+        model.EditRebuild3()
         self.clear(model)
-        # the sketch is now the newest feature in the tree; ISketch carries no
-        # name of its own, IFeature does
         return _w(self.mod.IFeature, model.FeatureByPositionReverse(0)).Name
 
-    # -- sketch primitives, mm in, metres out ------------------------------
     @staticmethod
     def line(sm, p0, p1):
         return sm.CreateLine(p0[0] * M, p0[1] * M, 0.0, p1[0] * M, p1[1] * M, 0.0)
@@ -248,28 +216,26 @@ class SolidWorks:
         for i in range(n - (0 if close else 1)):
             cls.line(sm, pts[i], pts[(i + 1) % n])
 
-    # ---------------- features ----------------
     def fm(self, model):
         return _w(self.mod.IFeatureManager, model.FeatureManager)
 
     def revolve(self, model, sketch_name, angle_deg, angle2_deg=None,
                 reverse=False, merge=True):
-        """Blind revolve. Pass angle2_deg for a symmetric two-direction one."""
         self.clear(model)
         self.select(model, sketch_name, "SKETCH")
         single = angle2_deg is None
         f = self.fm(model).FeatureRevolve2(
-            single,                     # SingleDir
-            True,                       # IsSolid
-            False,                      # IsThin
-            False,                      # IsCut
-            reverse,                    # ReverseDir
-            False,                      # BothDirectionUpToSameEntity
-            0, 0,                       # Type1, Type2 (blind)
+            single,
+            True,
+            False,
+            False,
+            reverse,
+            False,
+            0, 0,
             math.radians(angle_deg),
             math.radians(angle2_deg or 0.0),
-            False, False, 0.0, 0.0,     # offsets
-            0, 0.0, 0.0,                # thin
+            False, False, 0.0, 0.0,
+            0, 0.0, 0.0,
             merge, True, True)
         if f is None:
             raise RuntimeError(f"revolve of '{sketch_name}' failed "
@@ -277,9 +243,7 @@ class SolidWorks:
         return f
 
     def cut(self, model, sketch_name, *, through_both=False, depth=None,
-            reverse=False, both_dirs=False):
-        """Cut-extrude the named sketch: through-all (optionally both
-        directions) or blind by `depth` mm (optionally both directions)."""
+            reverse=False, both_dirs=False, feat_scope=True):
         self.clear(model)
         self.select(model, sketch_name, "SKETCH")
         if depth is None:
@@ -291,39 +255,115 @@ class SolidWorks:
             t1 = t2 = swEndCondBlind
             d1 = d2 = depth * M
         f = self.fm(model).FeatureCut4(
-            single,                     # Sd, single direction
-            False,                      # Flip side to cut
-            reverse,                    # Dir, reverse direction
+            single,
+            False,
+            reverse,
             t1, t2, d1, d2,
-            False, False,               # Dchk1, Dchk2 (draft)
-            False, False,               # Ddir1, Ddir2
-            0.0, 0.0,                   # Dang1, Dang2
-            False, False,               # OffsetReverse1/2
-            False, False,               # TranslateSurface1/2
-            False,                      # NormalCut
-            True, True,                 # UseFeatScope, UseAutoSelect
-            False, True, False,         # assembly scope args
-            0, 0.0, False,              # T0 / StartOffset / FlipStartOffset
-            False)                      # OptimizeGeometry
+            False, False,
+            False, False,
+            0.0, 0.0,
+            False, False,
+            False, False,
+            False,
+            feat_scope, True,
+            False, True, False,
+            0, 0.0, False,
+            False)
         if f is None:
             raise RuntimeError(f"cut of '{sketch_name}' failed")
         return f
 
-    def extrude(self, model, sketch_name, depth, both=False, merge=True):
+    def extrude(self, model, sketch_name, depth, both=False, merge=True,
+                feat_scope=True):
         self.clear(model)
         self.select(model, sketch_name, "SKETCH")
         f = self.fm(model).FeatureExtrusion3(
-            not both,                   # Sd
-            False, False,               # Flip, Dir
+            not both,
+            False, False,
             swEndCondBlind, swEndCondBlind,
             depth * M, depth * M,
             False, False, False, False,
             0.0, 0.0,
             False, False, False, False,
-            merge, True, True,
+            merge, feat_scope, True,
             0, 0.0, False)
         if f is None:
             raise RuntimeError(f"extrude of '{sketch_name}' failed")
+        return f
+
+    def axis_from_planes(self, model, plane_a, plane_b):
+        self.clear(model)
+        self.select(model, plane_a, "PLANE")
+        self.select(model, plane_b, "PLANE", append=True)
+        if not model.InsertAxis2(True):
+            raise RuntimeError(f"axis from '{plane_a}' x '{plane_b}' failed")
+        self.clear(model)
+        return _w(self.mod.IFeature, model.FeatureByPositionReverse(0)).Name
+
+    def circular_pattern(self, model, features, axis_name, count, angle_deg,
+                         equal=True):
+        self.clear(model)
+        ext = self.ext(model)
+        for i, name in enumerate(features):
+            if not ext.SelectByID2(name, "BODYFEATURE", 0, 0, 0, i > 0, 4,
+                                   None, 0):
+                raise RuntimeError(f"could not select feature '{name}'")
+        if not ext.SelectByID2(axis_name, "AXIS", 0, 0, 0, True, 1, None, 0):
+            raise RuntimeError(f"could not select axis '{axis_name}'")
+        p = self.fm(model).FeatureCircularPattern5(
+            count, math.radians(angle_deg), False, "NULL", False, equal,
+            False, False, False, False, 1, 0.0, "NULL", False)
+        if p is None:
+            raise RuntimeError(f"circular pattern of {features} failed")
+        self.clear(model)
+        return p
+
+    def last_feature_name(self, model):
+        return _w(self.mod.IFeature, model.FeatureByPositionReverse(0)).Name
+
+    def move_bodies(self, model, dx=0.0, dy=0.0, dz=0.0, angle_deg=0.0):
+        return self._move(model, dx, dy, dz, angle_deg)
+
+    def rotate_bodies_y(self, model, angle_deg):
+        self.clear(model)
+        b = self.part(model).GetBodies2(0, True)
+        if b is None:
+            raise RuntimeError("no solid body to rotate")
+        b = list(b) if isinstance(b, (list, tuple)) else [b]
+        ext = self.ext(model)
+        np = 0
+        for i, body in enumerate(b):
+            name = _w(self.mod.IBody2, body).Name
+            if ext.SelectByID2(name, "SOLIDBODY", 0, 0, 0, np > 0, 1,
+                               None, 0):
+                np += 1
+        if not np:
+            raise RuntimeError("could not select any body for the rotate")
+        return self._move(model, 0.0, 0.0, 0.0, angle_deg)
+
+    def _move(self, model, dx, dy, dz, angle_deg):
+        self.clear(model)
+        b = self.part(model).GetBodies2(0, True)
+        if b is None:
+            raise RuntimeError("no solid body to move")
+        b = list(b) if isinstance(b, (list, tuple)) else [b]
+        ext = self.ext(model)
+        np_ = 0
+        for body in b:
+            name = _w(self.mod.IBody2, body).Name
+            if ext.SelectByID2(name, "SOLIDBODY", 0, 0, 0, np_ > 0, 1, None, 0):
+                np_ += 1
+        if not np_:
+            raise RuntimeError("could not select any body to move")
+        f = self.fm(model).InsertMoveCopyBody2(
+            dx * M, dy * M, dz * M, 0.0,
+            0.0, 0.0, 0.0,
+            0.0, math.radians(angle_deg), 0.0,
+            False, 1)
+        if f is None:
+            raise RuntimeError(f"body move ({dx:.2f},{dy:.2f},{dz:.2f}) "
+                               f"rot {angle_deg:.2f} failed")
+        self.clear(model)
         return f
 
     def offset_plane(self, model, from_plane, distance):
@@ -334,14 +374,9 @@ class SolidWorks:
         if f is None:
             raise RuntimeError(f"offset plane {distance} mm from "
                                f"'{from_plane}' failed")
-        # InsertRefPlane hands back an IRefPlane, not an IFeature, so take the
-        # name off the newest tree node instead
         return _w(self.mod.IFeature, model.FeatureByPositionReverse(0)).Name
 
-    # ---------------- output ----------------
     def close_if_open(self, path):
-        """A document already open under the target name makes SaveAs fail
-        with a generic error, so evict it first."""
         try:
             self.app.CloseDoc(os.path.basename(path))
         except Exception:
@@ -351,13 +386,86 @@ class SolidWorks:
         path = os.path.abspath(path)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         self.close_if_open(path)
-        # SaveAs3's Errors/Warnings are in/out params, so they must be passed
-        # in as well as read back out
         res = self.ext(model).SaveAs3(path, 0, 1, None, None, 0, 0)
         ok, errs, warns = res if isinstance(res, tuple) else (res, 0, 0)
         if not ok:
             raise RuntimeError(f"save failed: {path} (err {errs}, warn {warns})")
         return path
+
+    _top_sign = None
+
+    def top_sketch_z_sign(self):
+        if SolidWorks._top_sign is not None:
+            return SolidWorks._top_sign
+        model = self.new_part()
+        front, top, right = self.base_planes(model)
+        sm = self.begin_sketch(model, top)
+        self.circle(sm, (0.0, 50.0), 20.0)
+        name = self.end_sketch(model)
+        self.extrude(model, name, 5.0)
+        body = self.part(model).GetBodies2(0, True)
+        body = body[0] if isinstance(body, (list, tuple)) else body
+        com = _w(self.mod.IBody2, body).GetMassProperties(1000.0)
+        sign = 1.0 if com[2] > 0 else -1.0
+        self.app.CloseDoc(model.GetTitle())
+        SolidWorks._top_sign = sign
+        return sign
+
+    _cut_front_reverse = None
+
+    def cut_front_reverse(self):
+        if SolidWorks._cut_front_reverse is not None:
+            return SolidWorks._cut_front_reverse
+        model = self.new_part()
+        front, top, right = self.base_planes(model)
+        sm = self.begin_sketch(model, front)
+        self.circle(sm, (0.0, 0.0), 60.0)
+        self.extrude(model, self.end_sketch(model), 10.0, both=True)
+        sm = self.begin_sketch(model, front)
+        self.circle(sm, (0.0, 0.0), 30.0)
+        self.cut(model, self.end_sketch(model), depth=8.0, reverse=False)
+        body = self.part(model).GetBodies2(0, True)
+        body = body[0] if isinstance(body, (list, tuple)) else body
+        com = _w(self.mod.IBody2, body).GetMassProperties(1000.0)
+        rev = com[2] > 0
+        self.app.CloseDoc(model.GetTitle())
+        SolidWorks._cut_front_reverse = rev
+        return rev
+
+    _cut_up_reverse = None
+
+    def cut_up_reverse(self):
+        if SolidWorks._cut_up_reverse is not None:
+            return SolidWorks._cut_up_reverse
+        model = self.new_part()
+        front, top, right = self.base_planes(model)
+        sm = self.begin_sketch(model, top)
+        self.circle(sm, (0.0, 0.0), 60.0)
+        self.extrude(model, self.end_sketch(model), 10.0, both=True)
+        sm = self.begin_sketch(model, top)
+        self.circle(sm, (0.0, 0.0), 30.0)
+        self.cut(model, self.end_sketch(model), depth=8.0, reverse=False)
+        body = self.part(model).GetBodies2(0, True)
+        body = body[0] if isinstance(body, (list, tuple)) else body
+        com = _w(self.mod.IBody2, body).GetMassProperties(1000.0)
+        rev = com[1] > 0
+        self.app.CloseDoc(model.GetTitle())
+        SolidWorks._cut_up_reverse = rev
+        return rev
+
+    def prime(self):
+        self.top_sketch_z_sign()
+        self.cut_up_reverse()
+        self.cut_front_reverse()
+
+    def body_box(self, model):
+        b = self.part(model).GetBodies2(0, True)
+        b = b[0] if isinstance(b, (list, tuple)) else b
+        box = _w(self.mod.IBody2, b).GetBodyBox()
+        return tuple(v * 1000.0 for v in box)
+
+    def top_xy(self, x, z):
+        return (x, z * self.top_sketch_z_sign())
 
     def rebuild(self, model):
         model.EditRebuild3()

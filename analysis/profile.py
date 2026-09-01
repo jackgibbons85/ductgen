@@ -15,12 +15,10 @@ for y in ys:
     r=np.hypot(pts[:,0]-cx,pts[:,2]-cz)
     th=np.degrees(np.arctan2(pts[:,2]-cz,pts[:,0]-cx))%360
     if theta_t is None:
-        # pick middle of angular range
         theta_t=(th.min()+th.max())/2
     m=np.abs(th-theta_t)<1.2
     if m.sum()<2: rows.append((y,None)); continue
     rr=np.sort(r[m])
-    # cluster radii
     cl=[]; cur=[rr[0]]
     for v in rr[1:]:
         if v-cur[-1]<1.5: cur.append(v)

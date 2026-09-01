@@ -29,15 +29,30 @@
     "diffuser_deg": 3.0,
     "prop_plane_frac": 0.28,
     "trailing_edge_r": 1.5,
+    "outer_style": "straight",
     "od_override": 0.0
   },
   "struts": {
     "count": 4,
-    "thickness": 2.5,
-    "chord": 8.0,
-    "hub_od": 26.0,
-    "hub_thickness": 4.0,
-    "y_frac": 0.55
+    "thickness": 5.0,
+    "chord": 18.0,
+    "hub_od": 66.0,
+    "hub_thickness": 6.0,
+    "y_frac": 0.55,
+    "tenon_depth": 0.0
+  },
+  "mount": {
+    "hub_od": 0.0,
+    "height": 0.0,
+    "boss_od": 0.0,
+    "boss_wall": 2.0,
+    "bore_clearance": 0.3,
+    "rod_y_frac": 0.5333,
+    "clamp_bolt": 3.0,
+    "clamp_bolt_clearance": 0.3,
+    "clamp_r": 0.0,
+    "reach": 0.0,
+    "bore_inner_r": 0.0
   },
   "joint": {
     "kind": "half_lap",
@@ -60,9 +75,52 @@
     "layer": 0.2
   },
   "layout": {
-    "duct_gap": 6.0,
+    "duct_gap": 0.0,
+    "duct_gap_ratio": 0.251,
     "config": "quad_x",
     "rod_size": 5.0,
     "rod_socket_clearance": 0.25
+  },
+  "connector": {
+    "enabled": true,
+    "outer_offset_ratio": 0.025,
+    "inner_offset_ratio": 0.31,
+    "pad_width_ratio": 0.358,
+    "inner_fillet_ratio": 0.13,
+    "pad_rod_wall": 6.0,
+    "blend_overlap": 1.5,
+    "fc_span": 16.0,
+    "fc_bolt": 2.0
+  },
+  "center": {
+    "plate_x": 45.0,
+    "plate_z": 40.0,
+    "plate_y": 0.0,
+    "fc_span": 20.0,
+    "fc_bolt": 3.0,
+    "fc_clearance": 0.3,
+    "stack_span": 0.0,
+    "stack_bolt": 3.0,
+    "stack_counterbore": 6.0,
+    "cross_bolt": 3.0,
+    "cross_bolt_offset": 12.0
+  },
+  "rods": {
+    "shape": "round",
+    "center_count": 2,
+    "center_size": 6.0,
+    "center_spacing": 0.0,
+    "center_y_frac": 0.625,
+    "motor_count": 3,
+    "motor_size": 4.0,
+    "motor_protrude": 9.0,
+    "motor_y_frac": 0.2,
+    "outer_count": 4,
+    "outer_size": 4.0,
+    "outer_overlap": 15.0,
+    "outer_inset": 2.0,
+    "outer_y_frac": 0.55,
+    "clearance": 0.25,
+    "bolt": 3.0
   }
 }

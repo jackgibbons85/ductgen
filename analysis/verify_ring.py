@@ -1,9 +1,3 @@
-"""Re-assemble the exported segment STL into a full ring and check it closes.
-
-This is the end-to-end test: the planner predicts a segmentation, SolidWorks
-builds one part from it, and this script proves N copies of that one part make
-a continuous ring with interlocking laps and aligned bolt holes.
-"""
 import sys
 import os
 import numpy as np
@@ -49,8 +43,6 @@ def main(stl, out_png, preset=None):
                 continue
             for a, b in segs:
                 ax.plot([a[0], b[0]], [a[2], b[2]], color=cols(i), lw=0.7)
-            # densify along each cut segment: the mesh is coarse, so vertex
-            # angles alone leave false gaps
             a = segs[:, 0, :]
             b = segs[:, 1, :]
             for k in range(11):

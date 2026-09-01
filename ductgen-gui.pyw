@@ -1,4 +1,3 @@
-"""Double-clickable entry point. .pyw so Windows opens it without a console."""
 import os
 import sys
 

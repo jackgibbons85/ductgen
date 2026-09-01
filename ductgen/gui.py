@@ -1,11 +1,3 @@
-"""Desktop front end.
-
-The point of this window is that the design rules update as you type, so you
-find out the lip is too sharp or the ring will not fit the plate before
-SolidWorks is involved at all.
-
-    python -m ductgen.gui          (or double-click ductgen-gui.pyw)
-"""
 from __future__ import annotations
 import json
 import os
@@ -32,7 +24,6 @@ def load_printers():
         return {"Bambu A1": {"bed_x": 256, "bed_y": 256, "bed_z": 256, "nozzle": 0.4}}
 
 
-# fields: (label, dotted path, kind)  kind: f=float i=int s=str b=bool
 FIELDS = [
     ("Propeller", [
         ("diameter (in)",       "prop.diameter_in",          "f"),
@@ -67,6 +58,20 @@ FIELDS = [
         ("joint lap (deg)",     "joint.lap_deg",             "f"),
         ("bolts per joint",     "joint.bolts",               "i"),
         ("joint bolt M-size",   "joint.bolt_size",           "f"),
+    ]),
+    ("Center plate / FC mount", [
+        ("FC pattern span (mm)", "center.fc_span",             "f"),
+        ("FC bolt M-size",      "center.fc_bolt",              "f"),
+        ("stack span (0 = off)", "center.stack_span",          "f"),
+        ("plate width (mm)",    "center.plate_x",              "f"),
+        ("plate depth (mm)",    "center.plate_z",              "f"),
+    ]),
+    ("Carbon rods", [
+        ("cross-section",       "rods.shape",                  "c:round,square"),
+        ("centre rod (0=auto)",  "rods.center_size",           "f"),
+        ("centre rod spacing",  "rods.center_spacing",         "f"),
+        ("motor rod (0=auto)",   "rods.motor_size",            "f"),
+        ("outer rod (0=auto)",   "rods.outer_size",            "f"),
     ]),
     ("Printer", [
         ("bed X (mm)",          "printer.bed_x",             "f"),
@@ -109,7 +114,6 @@ class App(tk.Tk):
         self._build()
         self.refresh()
 
-    # ------------------------------------------------------------------
     def _build(self):
         top = ttk.Frame(self, padding=8)
         top.pack(fill="x")
@@ -121,7 +125,9 @@ class App(tk.Tk):
         self.printer_cb.bind("<<ComboboxSelected>>", self.on_printer)
 
         for txt, cmd in (("Load preset", self.on_load), ("Save preset", self.on_save),
-                         ("Preview PNG", self.on_preview), ("Save report", self.on_report)):
+                         ("Preview PNG", self.on_preview),
+                         ("Section PNG", self.on_section),
+                         ("Save report", self.on_report)):
             ttk.Button(top, text=txt, command=cmd).pack(side="left", padx=3)
         self.build_btn = ttk.Button(top, text="Build in SolidWorks",
                                     command=self.on_build)
@@ -130,7 +136,6 @@ class App(tk.Tk):
         body = ttk.Frame(self, padding=(8, 0))
         body.pack(fill="both", expand=True)
 
-        # ---- left: inputs, scrollable ---------------------------------
         left = ttk.Frame(body)
         left.pack(side="left", fill="y")
         canvas = tk.Canvas(left, width=430, highlightthickness=0)
@@ -168,7 +173,6 @@ class App(tk.Tk):
                 lf.columnconfigure(0, weight=1)
                 self.vars[path] = (v, kind)
 
-        # ---- right: live results --------------------------------------
         right = ttk.Frame(body, padding=(10, 4))
         right.pack(side="left", fill="both", expand=True)
         self.summary = tk.Text(right, height=9, wrap="word", font=("Consolas", 9),
@@ -185,9 +189,7 @@ class App(tk.Tk):
         self.status = ttk.Label(self, text="", anchor="w", padding=(10, 4))
         self.status.pack(fill="x")
 
-    # ------------------------------------------------------------------
     def collect(self):
-        """Pull the widgets into self.frame. Bad numbers are left alone."""
         bad = []
         for path, (v, kind) in self.vars.items():
             raw = v.get()
@@ -229,7 +231,7 @@ class App(tk.Tk):
             f"power      {f.rpm_full:,.0f} rpm full charge, tip Mach {f.tip_mach():.2f}, "
             f"ideal gain x{f.ideal_thrust_gain:.2f}\n"
             f"mass       {m['grams']:.0f} g per ring, {4*m['grams']/1000:.2f} kg "
-            f"for four (3 walls / 15%)\n"
+            f"for four (3 walls 15%)\n"
             f"\nSPLIT      {ring.count} segments per ring "
             f"({4*ring.count} printed arcs), sweep {seg.sweep_deg:.1f} deg\n"
             f"           {seg.plate_w:.0f} x {seg.plate_h:.0f} x {f.duct_height:.0f} mm, "
@@ -254,7 +256,6 @@ class App(tk.Tk):
         self.status.config(text="invalid numbers ignored: " + ", ".join(bad)
                            if bad else "ready")
 
-    # ------------------------------------------------------------------
     def on_printer(self, *_):
         name = self.printer_cb.get()
         spec = self.printers[name]
@@ -299,7 +300,20 @@ class App(tk.Tk):
     def on_preview(self):
         self.collect()
         from .preview import render
-        p = render(self.frame, os.path.join(self._outdir(), "preview.png"))
+        out = self._outdir()
+        p = render(self.frame, os.path.join(out, "preview.png"),
+                   section_path=os.path.join(out, "section.png"))
+        self.status.config(text=f"saved {p} and section.png")
+        try:
+            os.startfile(p)
+        except Exception:
+            pass
+
+    def on_section(self):
+        self.collect()
+        from .preview import render_section
+        p = render_section(self.frame,
+                           os.path.join(self._outdir(), "section.png"))
         self.status.config(text=f"saved {p}")
         try:
             os.startfile(p)
@@ -333,7 +347,7 @@ class App(tk.Tk):
                 self.frame.to_json(os.path.join(out, "params.json"))
                 msg = "  ".join(f"{r['part']} x{r['qty']}" for r in made)
                 self.after(0, lambda: self.status.config(
-                    text=f"built {msg} -> {out}"))
+                    text=f"built {msg} x {out}"))
                 self.after(0, lambda: os.startfile(out))
             except Exception as e:
                 tb = traceback.format_exc()

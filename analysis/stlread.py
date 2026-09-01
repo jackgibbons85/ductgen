@@ -11,7 +11,6 @@ def read_stl(path):
         normals = f32[:,0,:]
         tris = f32[:,1:,:]
         return tris.astype(np.float64), normals.astype(np.float64)
-    # ascii fallback
     txt = open(path,'r',errors='ignore').read().split()
     v=[]
     for i,t in enumerate(txt):
@@ -22,7 +21,6 @@ def info(path):
     t,nz = read_stl(path)
     v = t.reshape(-1,3)
     mn, mx = v.min(0), v.max(0)
-    # volume via divergence
     a,b,c = t[:,0],t[:,1],t[:,2]
     vol = np.einsum('ij,ij->i', a, np.cross(b,c)).sum()/6.0
     area = 0.5*np.linalg.norm(np.cross(b-a,c-a),axis=1).sum()
