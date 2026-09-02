@@ -12,11 +12,11 @@
 [![build123d](https://img.shields.io/badge/build123d-0.9-orange)](https://github.com/gumyr/build123d)
 [![CI](https://github.com/jackgibbons85/ductgen/actions/workflows/ci.yml/badge.svg)](https://github.com/jackgibbons85/ductgen/actions/workflows/ci.yml)
 
-Give it a prop size, a motor and your printer's bed. It derives the duct section from the aerodynamics, splits the ring into the fewest pieces that still fit the plate, and builds the parts as SLDPRT, STEP and STL.
+input a prop size/ motor and your printers bed size. gets the duct section from correct aerodynamics, splits the ring into the fewest pieces that still fit the plate, and builds the parts as SLDPRT, STEP and STL.
 
 [Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [Documentation](#documentation)
 
-**[English](README.md)** | **[Українська](README.uk.md)**
+**[English](README.md)** | **[简体中文](README.zh-CN.md)** | **[Українська](README.uk.md)**
 
 </div>
 
@@ -44,7 +44,7 @@ That writes a preview PNG and a full report without touching CAD. Then either do
 
 ## Features
 
-### Inputs That Drive Geometry Through the Physics
+### Geometry
 
 Change an input and the tool works out what it means, then tells you when the numbers do not add up.
 
@@ -107,7 +107,7 @@ Use SolidWorks when you want a feature tree you can keep editing by hand. Use bu
 - **One overhang worth naming.** In the good orientation the only overhanging bore surface is the diffuser, at 3 degrees from vertical.
 - **Minimal supports.** The half-lap tab at one end of each segment is a shelf with air under it. Support that face only, two small patches per part.
 
-### How the Frame Goes Together
+### putting it together
 
 - **Studs, not bolts.** Joints are located by a blind stud pocket in each half of the lap. The carbon wrap is the structure and the pin only stops the two halves sliding while the wrap goes on. Set `joint.stud = 0` to put through-bolts back.
 - **Orderable rod sizes.** Rod sizes, bolt patterns and the centre plate all derive from the prop unless you pin them, and derived rods snap onto tube sizes you can actually buy. 13" gives 10 mm arms and a 20 mm spine, 5" gives 6 and 12. Nothing in the output is 5.3249 mm.
@@ -199,7 +199,7 @@ The report also carries the carbon-rod cut list and a bolt count. On the 13" pre
 python tests/test_geometry.py
 ```
 
-No CAD needed. It checks the invariants that matter: the meridian never self-intersects, the lip always fits inside the wall, N segments tile 360 degrees exactly, joints never land on a strut root, a smaller bed never yields fewer segments, the strut socket always leaves a ligament, every rod gets a clear path and a screw over it, derived rods land on tube sizes you can buy, and the reference preset still reproduces the measured drone. The build123d cases run too if build123d is installed. CI runs the suite on every push and uploads the rendered previews.
+No CAD needed. It checks the invariants that matter and never self-intersects, the lip always fits inside the wall, N segments tile 360 degrees exactly, joints never land on a strut root, a smaller bed never yields fewer segments, the strut socket always leaves a ligament, every rod gets a clear path and a screw over it, rods land on tube sizes you can buy, and the reference preset still reproduces the measured drone. The build123d cases run too if build123d is installed. CI runs the suite on every push and uploads the rendered previews.
 
 ---
 
@@ -210,7 +210,7 @@ Contributions are welcome, whether that is a bug report, a feature idea, a fix o
 ### How to Contribute
 
 1. **Report issues.** Found a bug? [Open an issue](https://github.com/jackgibbons85/ductgen/issues/new)
-2. **Suggest features.** Have an idea? [Start a discussion](https://github.com/jackgibbons85/ductgen/discussions)
+2. **Suggest features.** Have an idea? [Email me](https://github.com/jackgibbons85/ductgen/discussions)
 3. **Send a preset.** A printer profile or an airframe preset that works is genuinely useful.
 4. **Write code.** Fork, branch, and make sure `python tests/test_geometry.py` still passes.
 
@@ -221,7 +221,7 @@ Contributions are welcome, whether that is a bug report, a feature idea, a fix o
 - **Printer profiles.** More entries for `presets/printers.json`
 - **Airframe presets** with measurements behind them, the way `reference_drone3` has
 - **Joint kinds.** `dovetail` and `butt_pin` are declared but not built
-- **Translations.** This README is in English and Ukrainian so far
+- **Translations.** This README is in English, Simplified Chinese and Ukrainian so far
 
 ---
 
@@ -231,9 +231,9 @@ Contributions are welcome, whether that is a bug report, a feature idea, a fix o
 - **[macro/README.md](macro/README.md)** - Putting ductgen on a SolidWorks toolbar button
 - **[DEVLOG.md](DEVLOG.md)** - Build log, including the SolidWorks API problems and how they were solved
 
-### Notes on the SolidWorks Side
+### SolidWorks Notes 
 
-A few things cost me time, recorded so they do not cost it twice.
+here were some issues
 
 - Late-bound COM turns SolidWorks methods into properties, so `doc.GetTitle` returns a string instead of being callable. `swapi.module()` registers the typelib with makepy on first run and everything goes through the generated wrappers.
 - `IFeatureManager::FeatureCut4` takes 27 arguments in 2025, not the 24 most published examples use. The extra three are `T0`, `StartOffset` and `FlipStartOffset`.
@@ -244,7 +244,7 @@ A few things cost me time, recorded so they do not cost it twice.
 
 ---
 
-## Technology Stack
+## Technology
 
 ### Core
 
@@ -290,20 +290,6 @@ tests/           geometry invariants, no CAD needed
 
 ---
 
-## Roadmap
-
-- [x] Bed-fit splitter with joint phasing
-- [x] build123d backend, so the tool runs without a CAD licence
-- [x] Hole clash checking as a design rule
-- [x] Assembly generation, components placed from the layout table
-- [ ] Mates in the assembly, not just placement by transform
-- [ ] Centre fuselage and camera mount
-- [ ] `dovetail` and `butt_pin` joints, currently declared but not built
-- [ ] CAD-side lightening of the duct, since the section is solid right now and the slicer hollows it
-- [ ] Segmentation driven by the rod angles rather than bed fit alone, so every rod lands at a segment centre by construction
-
----
-
 ## License
 
 MIT. See [LICENSE](LICENSE) for details.
@@ -315,6 +301,14 @@ MIT. See [LICENSE](LICENSE) for details.
 - [build123d](https://github.com/gumyr/build123d) by gumyr, which made the no-licence backend possible
 - The SolidWorks API documentation and the forum posts that filled its gaps
 - Every default here traces back to one real 13" airframe, written up in [REFERENCE.md](REFERENCE.md)
+
+---
+
+## Contact
+
+Jack Gibbons, [jackgibbons@artyom.us](mailto:jackgibbons@artyom.us)
+
+For bugs and feature requests an [issue](https://github.com/jackgibbons85/ductgen/issues/new) is better than email, since the answer stays where the next person can find it.
 
 <div align="center">
 
